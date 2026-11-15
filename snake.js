@@ -21,6 +21,8 @@ let isGameOver = false;
 const ctx = canvas.getContext('2d');
 const tileSize = 20;
 let score = 0;
+let foodsEaten = 0;
+let eggs = [];
 
 
 const gridCounter = canvas.width / tileSize;
@@ -45,8 +47,9 @@ let gameSpeed = initialGameSpeed;
 function checkCollision(head) {
     const hitWall = head.x < 0 || head.x >= gridCounter || head.y < 0 || head.y >= gridCounter;
     const hitSelf = snake.some(part => part.x === head.x && part.y === head.y);
+    const hitEgg = eggs.some(egg => egg.x === head.x && egg.y === head.y);
 
-    return hitWall || hitSelf;
+    return hitWall || hitSelf || hitEgg;
 }
 
 function gameOver() {
@@ -96,7 +99,13 @@ function update() {
     snake.unshift(newHead);
     if (newHead.x === food.x && newHead.y === food.y) {
         score+=10;
+        foodsEaten++;
         scoreElement.textContent = `${score}`;
+
+        // Every third food leaves an egg at the snake's tail.
+        if (foodsEaten % 3 === 0) {
+            layEgg();
+        }
         createFood();
 
         gameSpeed = Math.max(minGameSpeed, gameSpeed - speedIncrease);
@@ -116,6 +125,7 @@ function draw() {
     clearCanvas();
     drawSnake();
     drawFood();
+    drawEgg();
 }
 
 function startGame() {
@@ -123,6 +133,8 @@ function startGame() {
 
     isGameOver = false;
     score = 0;
+    foodsEaten = 0;
+    eggs = [];
     gameSpeed = initialGameSpeed;
 
     snake = [
@@ -209,6 +221,17 @@ window.addEventListener('keydown', (event) => {
     }
 })
 
+// Keep an independent copy of the tail position: the snake will move on.
+function layEgg() {
+    const tail = snake.at(-1);
+    eggs.push({x: tail.x, y: tail.y});
+}
+
+// Eggs remain on the board as white obstacles.
+function drawEgg() {
+    eggs.forEach(egg => drawCell(egg.x, egg.y, 'white'));
+}
+
 function drawFood() {
     drawCell(food.x, food.y, 'red')
 }
@@ -220,8 +243,9 @@ function createFood() {
         const randomX = Math.floor(Math.random() * gridCounter);
         const randomY = Math.floor(Math.random() * gridCounter);
         const onSnake = snake.some(part => part.x === randomX && part.y === randomY);
+        const onEgg = eggs.some(egg => egg.x === randomX && egg.y === randomY);
 
-        if (!onSnake) {
+        if (!onSnake && !onEgg) {
             food = {x: randomX, y: randomY};
             validPosition = true;
         }
