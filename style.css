@@ -90,3 +90,54 @@ canvas {
     color: #999;
     font-size: 14px;
 }
+
+/* Az aktuális oldal futásáig tárolt TOP 10 ranglista. */
+.leaderboard {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #444;
+}
+
+.leaderboard h2 {
+    margin: 0 0 12px;
+    color: #4caf50;
+    font-size: 20px;
+}
+
+.leaderboard table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.leaderboard th,
+.leaderboard td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #383838;
+}
+
+.leaderboard th {
+    color: #bbb;
+    font-size: 14px;
+}
+
+.leaderboard th:last-child,
+.leaderboard td:last-child {
+    text-align: right;
+}
+
+.leaderboard tbody tr:first-child {
+    color: #81c784;
+    font-weight: bold;
+}
+
+.empty-leaderboard {
+    text-align: center !important;
+    color: #999;
+}
+
+.leaderboard-note {
+    margin: 12px 0 0;
+    color: #999;
+    font-size: 12px;
+}
