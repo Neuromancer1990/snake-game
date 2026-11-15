@@ -2,6 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const scoreElement = document.getElementById('score');
 const speedElement = document.getElementById('speed');
 const startBtn = document.getElementById('startBtn');
+const leaderboardRows = document.getElementById('leaderboardRows');
 
 const snakeHeadImage = new Image();
 snakeHeadImage.src = './snek.png';
@@ -23,6 +24,8 @@ const tileSize = 20;
 let score = 0;
 let foodsEaten = 0;
 let eggs = [];
+let playerName = '';
+let leaderboard = [];
 
 
 const gridCounter = canvas.width / tileSize;
@@ -54,6 +57,7 @@ function checkCollision(head) {
 
 function gameOver() {
     isGameOver = true;
+    saveScore();
     clearInterval(gameInterval);
     gameInterval = null;
     startBtn.disabled = false;
@@ -129,6 +133,11 @@ function draw() {
 }
 
 function startGame() {
+    // Minden játék elején újra bekérjük a játékos nevét.
+    const name = prompt('Add meg a játékosneved:');
+    if (name === null || !name.trim()) return;
+    playerName = name.trim().slice(0, 20);
+
     if (gameInterval) clearInterval(gameInterval);
 
     isGameOver = false;
@@ -253,4 +262,51 @@ function createFood() {
 
 }
 
+// A ranglista csak a jelenleg nyitott oldal memóriájában él.
+function saveScore() {
+    const existingPlayer = leaderboard.find(player => player.name === playerName);
+
+    if (existingPlayer) {
+        if (score > existingPlayer.score) {
+            existingPlayer.score = score;
+        }
+    } else {
+        leaderboard.push({name: playerName, score: score});
+    }
+
+    leaderboard.sort((a, b) => b.score - a.score);
+    leaderboard = leaderboard.slice(0, 10);
+    drawLeaderboard();
+}
+
+function drawLeaderboard() {
+    leaderboardRows.replaceChildren();
+
+    if (leaderboard.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 3;
+        cell.textContent = 'Még nincs eredmény.';
+        cell.className = 'empty-leaderboard';
+        row.appendChild(cell);
+        leaderboardRows.appendChild(row);
+        return;
+    }
+
+    leaderboard.forEach((player, index) => {
+        const row = document.createElement('tr');
+        const positionCell = document.createElement('td');
+        const nameCell = document.createElement('td');
+        const scoreCell = document.createElement('td');
+
+        positionCell.textContent = index + 1;
+        nameCell.textContent = player.name;
+        scoreCell.textContent = player.score;
+
+        row.append(positionCell, nameCell, scoreCell);
+        leaderboardRows.appendChild(row);
+    });
+}
+
 startBtn.addEventListener('click', startGame);
+drawLeaderboard();
