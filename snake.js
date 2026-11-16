@@ -41,7 +41,9 @@ let score = 0;
 let foodsEaten = 0;
 
 let playerName = '';
-let leaderboard = [];
+let leaderboard = JSON.parse(
+    localStorage.getItem('snakeLeaderboard') || '[]'
+);
 
 let eggs = [];
 let food = null;
@@ -405,9 +407,14 @@ function saveScore() {
     leaderboard.sort((a, b) => b.score - a.score);
     leaderboard = leaderboard.slice(0, 10);
 
+    // Ranglista mentése a böngészőbe
+    localStorage.setItem(
+        'snakeLeaderboard',
+        JSON.stringify(leaderboard)
+    );
+
     drawLeaderboard();
 }
-
 function drawLeaderboard() {
     leaderboardRows.replaceChildren();
 
