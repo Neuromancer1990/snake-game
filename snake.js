@@ -24,6 +24,12 @@ snakeHeadImage.src = './snek.png';
 const snakeBodyImage = new Image();
 snakeBodyImage.src = './snek2.png';
 
+const eggImage = new Image();
+eggImage.src = './egg.png';
+
+const foodImage = new Image();
+foodImage.src = './food.png';
+
 // 3. JÁTÉKÁLLAPOT
 
 let isGameOver = false;
@@ -303,17 +309,43 @@ function drawSnake() {
             ? snakeHeadImage
             : snakeBodyImage;
 
+        let angle = 0;
+
+        if (index === 0) {
+            // A fej a haladási irányba néz
+            angle = Math.atan2(direction.y, direction.x);
+        }
+
+        ctx.save();
+
+        // Forgatás középpontja
+        ctx.translate(
+            part.x * tileSize + tileSize / 2,
+            part.y * tileSize + tileSize / 2
+        );
+
+        ctx.rotate(angle);
+
+        // Kép középre igazítása
         if (image.complete && image.naturalWidth > 0) {
             ctx.drawImage(
                 image,
-                part.x * tileSize,
-                part.y * tileSize,
+                -tileSize / 2,
+                -tileSize / 2,
                 tileSize - 1,
                 tileSize - 1
             );
         } else {
-            drawCell(part.x, part.y, 'green');
+            ctx.fillStyle = 'green';
+            ctx.fillRect(
+                -tileSize / 2,
+                -tileSize / 2,
+                tileSize - 1,
+                tileSize - 1
+            );
         }
+
+        ctx.restore();
     });
 }
 
@@ -321,16 +353,35 @@ function drawSnake() {
 function drawFood() {
     if (food === null) return;
 
-    drawCell(food.x, food.y, 'red');
+    if (foodImage.complete && foodImage.naturalWidth > 0) {
+        ctx.drawImage(
+            foodImage,
+            food.x * tileSize,
+            food.y * tileSize,
+            tileSize - 1,
+            tileSize - 1
+        );
+    } else {
+        drawCell(food.x, food.y, 'red');
+    }
 }
 
 
 function drawEgg() {
-    eggs.forEach(egg =>
-        drawCell(egg.x, egg.y, 'white')
-    );
+    eggs.forEach(egg => {
+        if (eggImage.complete && eggImage.naturalWidth > 0) {
+            ctx.drawImage(
+                eggImage,
+                egg.x * tileSize,
+                egg.y * tileSize,
+                tileSize - 1,
+                tileSize - 1
+            );
+        } else {
+            drawCell(egg.x, egg.y, 'white');
+        }
+    });
 }
-
 
 // 7. RANGLISTA
 
@@ -435,6 +486,8 @@ window.addEventListener('keydown', (event) => {
 
 snakeHeadImage.onload = draw;
 snakeBodyImage.onload = draw;
+eggImage.onload = draw;
+foodImage.onload = draw;
 
 startBtn.addEventListener('click', startGame);
 
