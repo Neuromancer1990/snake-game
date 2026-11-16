@@ -1,8 +1,22 @@
+
+// 1. DOM ELEMEK ÖSSZEKÖTÉSE
+
 const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
 const scoreElement = document.getElementById('score');
 const speedElement = document.getElementById('speed');
 const startBtn = document.getElementById('startBtn');
 const leaderboardRows = document.getElementById('leaderboardRows');
+
+// 2. KONSTANSOK ÉS ALAP ÉRTÉKEI / KÉPEK ELÉRÉSE
+
+const tileSize = 20;
+const gridCounter = canvas.width / tileSize;
+
+const initialGameSpeed = 120;
+const speedIncrease = 3;
+const minGameSpeed = 40;
 
 const snakeHeadImage = new Image();
 snakeHeadImage.src = './snek.png';
@@ -10,135 +24,42 @@ snakeHeadImage.src = './snek.png';
 const snakeBodyImage = new Image();
 snakeBodyImage.src = './snek2.png';
 
-snakeHeadImage.onload = () => {
-    draw();
-};
-snakeBodyImage.onload = () => {
-    draw();
-};
+// 3. JÁTÉKÁLLAPOT
 
 let isGameOver = false;
+let gameInterval = null;
+let gameSpeed = initialGameSpeed;
 
-const ctx = canvas.getContext('2d');
-const tileSize = 20;
 let score = 0;
 let foodsEaten = 0;
-let eggs = [];
+
 let playerName = '';
 let leaderboard = [];
 
-
-const gridCounter = canvas.width / tileSize;
-
-let food = {x: 15, y: 10};
+let eggs = [];
+let food = null;
 
 let snake = [
     {x: 10, y: 10},
     {x: 9, y: 10},
     {x: 8, y: 10}
-]
+];
 
-let direction = {x: 1, y: 0}
+let direction = {x: 1, y: 0};
 let nextDirection = {x: 1, y: 0};
-let gameInterval = null;
-const initialGameSpeed = 120;
-const speedIncrease = 3;
-const minGameSpeed = 40;
 
-let gameSpeed = initialGameSpeed;
-
-function checkCollision(head) {
-    const hitWall = head.x < 0 || head.x >= gridCounter || head.y < 0 || head.y >= gridCounter;
-    const hitSelf = snake.some(part => part.x === head.x && part.y === head.y);
-    const hitEgg = eggs.some(egg => egg.x === head.x && egg.y === head.y);
-
-    return hitWall || hitSelf || hitEgg;
-}
-
-function gameOver() {
-    isGameOver = true;
-    saveScore();
-    clearInterval(gameInterval);
-    gameInterval = null;
-    startBtn.disabled = false;
-    startBtn.textContent = "RESTART GAME";
-
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 36px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText("GAME OVER", canvas.width/2,canvas.height/2);
-
-    ctx.fillStyle= 'white';
-    ctx.font = '25px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(`Final score: ${score}`,canvas.width/2,canvas.height/2 + 30);
-
-}
-
-function gameLoop() {
-    if (isGameOver) return;
-    update();
-    if (isGameOver) return;
-    draw();
-}
-
-function update() {
-
-    direction = nextDirection;
-
-    const currentHead = snake[0];
-    const newHead = {
-        x: currentHead.x + direction.x,
-        y: currentHead.y + direction.y
-    };
-
-    if(checkCollision(newHead)){
-        gameOver();
-        return;
-    }
-
-    snake.unshift(newHead);
-    if (newHead.x === food.x && newHead.y === food.y) {
-        score+=10;
-        foodsEaten++;
-        scoreElement.textContent = `${score}`;
-
-        // Every third food leaves an egg at the snake's tail.
-        if (foodsEaten % 3 === 0) {
-            layEgg();
-        }
-        createFood();
-
-        gameSpeed = Math.max(minGameSpeed, gameSpeed - speedIncrease);
-        speedElement.textContent = gameSpeed;
-        clearInterval(gameInterval);
-        gameInterval = setInterval(gameLoop, gameSpeed);
-
-
-    } else {
-        snake.pop();
-    }
-
-
-}
-
-function draw() {
-    clearCanvas();
-    drawSnake();
-    drawFood();
-    drawEgg();
-}
+// 4. JÁTÉK VEZÉRLÉSE
 
 function startGame() {
-    // Minden játék elején újra bekérjük a játékos nevét.
     const name = prompt('Add meg a játékosneved:');
+
     if (name === null || !name.trim()) return;
+
     playerName = name.trim().slice(0, 20);
 
-    if (gameInterval) clearInterval(gameInterval);
+    if (gameInterval) {
+        clearInterval(gameInterval);
+    }
 
     isGameOver = false;
     score = 0;
@@ -155,13 +76,13 @@ function startGame() {
     direction = {x: 1, y: 0};
     nextDirection = {x: 1, y: 0};
 
-    food = {x: 15, y: 10};
+    createFood();
 
     scoreElement.textContent = score;
     speedElement.textContent = gameSpeed;
 
     startBtn.disabled = true;
-    startBtn.textContent = "GAME RUNNING";
+    startBtn.textContent = 'GAME RUNNING';
 
     draw();
 
@@ -169,113 +90,269 @@ function startGame() {
 }
 
 
-function clearCanvas() {
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+function gameLoop() {
+    if (isGameOver) return;
+
+    update();
+
+    if (isGameOver) return;
+
+    draw();
 }
+
+
+function gameOver() {
+    isGameOver = true;
+
+    clearInterval(gameInterval);
+    gameInterval = null;
+
+    saveScore();
+
+    startBtn.disabled = false;
+    startBtn.textContent = 'RESTART GAME';
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+
+    ctx.font = 'bold 36px Arial';
+    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+
+    ctx.font = '25px Arial';
+    ctx.fillText(`Final score: ${score}`,
+        canvas.width / 2,
+        canvas.height / 2 + 30
+    );
+}
+
+function gameWon() {
+    isGameOver = true;
+
+    clearInterval(gameInterval);
+    gameInterval = null;
+
+    saveScore();
+
+    startBtn.disabled = false;
+    startBtn.textContent = 'PLAY AGAIN';
+
+    draw();
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'lime';
+    ctx.textAlign = 'center';
+
+    ctx.font = 'bold 36px Arial';
+    ctx.fillText('YOU WIN!', canvas.width / 2, canvas.height / 2);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '25px Arial';
+    ctx.fillText(
+        `Final score: ${score}`,
+        canvas.width / 2,
+        canvas.height / 2 + 35
+    );
+}
+
+// 5. JÁTÉKLOGIKA
+
+function update() {
+    direction = nextDirection;
+
+    const currentHead = snake[0];
+
+    const newHead = {
+        x: currentHead.x + direction.x,
+        y: currentHead.y + direction.y
+    };
+
+    if (checkCollision(newHead)) {
+        gameOver();
+        return;
+    }
+
+    snake.unshift(newHead);
+
+    if (newHead.x === food.x && newHead.y === food.y) {
+        score += 10;
+        foodsEaten++;
+
+        scoreElement.textContent = score;
+
+        if (foodsEaten % 3 === 0) {
+            layEgg();
+        }
+
+        if (!createFood()) {
+            gameWon();
+            return;
+        }
+
+        gameSpeed = Math.max(
+            minGameSpeed,
+            gameSpeed - speedIncrease
+        );
+
+        speedElement.textContent = gameSpeed;
+
+        clearInterval(gameInterval);
+        gameInterval = setInterval(gameLoop, gameSpeed);
+
+    } else {
+        snake.pop();
+    }
+}
+
+
+function checkCollision(head) {
+    const hitWall =
+        head.x < 0 ||
+        head.x >= gridCounter ||
+        head.y < 0 ||
+        head.y >= gridCounter;
+
+    const hitSelf = snake.some(part =>
+        part.x === head.x && part.y === head.y
+    );
+
+    const hitEgg = eggs.some(egg =>
+        egg.x === head.x && egg.y === head.y
+    );
+
+    return hitWall || hitSelf || hitEgg;
+}
+
+
+function layEgg() {
+    const tail = snake.at(-1);
+
+    eggs.push({
+        x: tail.x,
+        y: tail.y
+    });
+}
+
+
+function createFood() {
+    const freeCells = [];
+
+    for (let x = 0; x < gridCounter; x++) {
+        for (let y = 0; y < gridCounter; y++) {
+
+            const onSnake = snake.some(part =>
+                part.x === x && part.y === y
+            );
+
+            const onEgg = eggs.some(egg =>
+                egg.x === x && egg.y === y
+            );
+
+            if (!onSnake && !onEgg) {
+                freeCells.push({x: x, y: y});
+            }
+        }
+    }
+
+    if (freeCells.length === 0) {
+        food = null;
+        return false;
+    }
+
+    const randomIndex = Math.floor(Math.random() * freeCells.length);
+    food = freeCells[randomIndex];
+
+    return true;
+}
+
+// 6. KIRAJZOLÁS
+
+function draw() {
+    clearCanvas();
+    drawSnake();
+    drawFood();
+    drawEgg();
+}
+
+
+function clearCanvas() {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
 
 function drawCell(x, y, color) {
     ctx.fillStyle = color;
-    ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+
+    ctx.fillRect(
+        x * tileSize,
+        y * tileSize,
+        tileSize - 1,
+        tileSize - 1
+    );
 }
+
 
 function drawSnake() {
     snake.forEach((part, index) => {
-        if (index === 0) {
+        const image = index === 0
+            ? snakeHeadImage
+            : snakeBodyImage;
+
+        if (image.complete && image.naturalWidth > 0) {
             ctx.drawImage(
-                snakeHeadImage,
+                image,
                 part.x * tileSize,
                 part.y * tileSize,
                 tileSize - 1,
                 tileSize - 1
             );
         } else {
-            ctx.drawImage(
-                snakeBodyImage,
-                part.x * tileSize,
-                part.y * tileSize,
-                tileSize - 1,
-                tileSize - 1
-            );
+            drawCell(part.x, part.y, 'green');
         }
-    })
+    });
 }
 
-window.addEventListener('keydown', (event) => {
-    switch (event.key) {
-        case 'ArrowUp':
-        case 'w':
-            if (direction.y === 0) {
-                nextDirection = {x: 0, y: -1}
-            }
-            break;
-        case 'ArrowDown':
-        case 's':
-            if (direction.y === 0) {
-                nextDirection = {x: 0, y: 1}
-            }
-            break;
-        case 'ArrowLeft':
-        case 'a':
-            if (direction.x === 0) {
-                nextDirection = {x: -1, y: 0}
-            }
-            break;
-        case 'ArrowRight':
-        case 'd':
-            if (direction.x === 0) {
-                nextDirection = {x: 1, y: 0}
-            }
-            break;
-    }
-})
-
-// Keep an independent copy of the tail position: the snake will move on.
-function layEgg() {
-    const tail = snake.at(-1);
-    eggs.push({x: tail.x, y: tail.y});
-}
-
-// Eggs remain on the board as white obstacles.
-function drawEgg() {
-    eggs.forEach(egg => drawCell(egg.x, egg.y, 'white'));
-}
 
 function drawFood() {
-    drawCell(food.x, food.y, 'red')
+    if (food === null) return;
+
+    drawCell(food.x, food.y, 'red');
 }
 
-function createFood() {
-    let validPosition = false;
 
-    while (!validPosition) {
-        const randomX = Math.floor(Math.random() * gridCounter);
-        const randomY = Math.floor(Math.random() * gridCounter);
-        const onSnake = snake.some(part => part.x === randomX && part.y === randomY);
-        const onEgg = eggs.some(egg => egg.x === randomX && egg.y === randomY);
-
-        if (!onSnake && !onEgg) {
-            food = {x: randomX, y: randomY};
-            validPosition = true;
-        }
-    }
-
+function drawEgg() {
+    eggs.forEach(egg =>
+        drawCell(egg.x, egg.y, 'white')
+    );
 }
 
-// A ranglista csak a jelenleg nyitott oldal memóriájában él.
+
+// 7. RANGLISTA
+
 function saveScore() {
-    const existingPlayer = leaderboard.find(player => player.name === playerName);
+    const existingPlayer = leaderboard.find(player =>
+        player.name === playerName
+    );
 
     if (existingPlayer) {
         if (score > existingPlayer.score) {
             existingPlayer.score = score;
         }
     } else {
-        leaderboard.push({name: playerName, score: score});
+        leaderboard.push({
+            name: playerName,
+            score: score
+        });
     }
 
     leaderboard.sort((a, b) => b.score - a.score);
     leaderboard = leaderboard.slice(0, 10);
+
     drawLeaderboard();
 }
 
@@ -285,16 +362,20 @@ function drawLeaderboard() {
     if (leaderboard.length === 0) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
+
         cell.colSpan = 3;
         cell.textContent = 'Még nincs eredmény.';
         cell.className = 'empty-leaderboard';
+
         row.appendChild(cell);
         leaderboardRows.appendChild(row);
+
         return;
     }
 
     leaderboard.forEach((player, index) => {
         const row = document.createElement('tr');
+
         const positionCell = document.createElement('td');
         const nameCell = document.createElement('td');
         const scoreCell = document.createElement('td');
@@ -308,5 +389,55 @@ function drawLeaderboard() {
     });
 }
 
+// 8. ESEMÉNYKEZELŐK ÉS INICIALIZÁLÁS
+
+window.addEventListener('keydown', (event) => {
+    const key = event.key.toLowerCase();
+
+    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+        if (gameInterval !== null) {
+            event.preventDefault();
+        }
+    }
+
+    if (gameInterval === null) return;
+
+    switch (key) {
+        case 'arrowup':
+        case 'w':
+            if (direction.y === 0) {
+                nextDirection = {x: 0, y: -1};
+            }
+            break;
+
+        case 'arrowdown':
+        case 's':
+            if (direction.y === 0) {
+                nextDirection = {x: 0, y: 1};
+            }
+            break;
+
+        case 'arrowleft':
+        case 'a':
+            if (direction.x === 0) {
+                nextDirection = {x: -1, y: 0};
+            }
+            break;
+
+        case 'arrowright':
+        case 'd':
+            if (direction.x === 0) {
+                nextDirection = {x: 1, y: 0};
+            }
+            break;
+    }
+});
+
+snakeHeadImage.onload = draw;
+snakeBodyImage.onload = draw;
+
 startBtn.addEventListener('click', startGame);
+
+createFood();
 drawLeaderboard();
+draw();
