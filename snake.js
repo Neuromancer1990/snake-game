@@ -15,7 +15,7 @@ const leaderboardRows = document.getElementById('leaderboardRows');
 const tileSize = 20;
 const gridCounter = canvas.width / tileSize;
 
-const initialGameSpeed = 120;
+const initialGameSpeed = 150;
 const speedIncrease = 3;
 const minGameSpeed = 40;
 
