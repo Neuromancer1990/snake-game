@@ -3,6 +3,7 @@
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
 
 const scoreElement = document.getElementById('score');
 const speedElement = document.getElementById('speed');
